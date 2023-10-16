@@ -1,0 +1,71 @@
+import pandas as pd
+import os
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_squared_error
+
+current_directory = os.getcwd()
+
+file_path = os.path.join(current_directory, 'NMR-Data.csv')
+
+df = pd.read_csv(file_path)
+
+# Separate rows with NaN in 'Chemical_Shift'
+df_pred = df[df['Chemical_Shift'].notna()].copy()
+
+# Encode categorical features
+le_basis_set = LabelEncoder()
+le_pom = LabelEncoder()
+df_pred['Basis_Set_enc'] = le_basis_set.fit_transform(df_pred['Basis_Set'])
+df_pred['POM_enc'] = le_pom.fit_transform(df_pred['POM'])
+
+# Define features and target
+X_train = df_pred[['Hartree-Fock', 'Basis_Set_enc', 'POM_enc', 'Experimental']]
+y_train = df_pred['Chemical_Shift']
+
+# Train a decision tree model with hyperparameter tuning using grid search
+model = DecisionTreeRegressor()
+
+# Define the hyperparameter grid
+param_dist = {
+    'criterion': ['friedman_mse', 'squared_error'],
+    'max_depth': list([1, 2]),
+    'min_samples_split': list([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+    'min_samples_leaf': list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+}
+
+# Create GridSearchCV object
+grid_search = GridSearchCV(estimator=model, param_grid=param_dist, cv=5, scoring='neg_mean_squared_error')
+
+# Fit the grid search to the data
+grid_search.fit(X_train, y_train)
+
+# Display the best hyperparameters found
+print("Best Hyperparameters:", grid_search.best_params_)
+
+# Make predictions on the test set using the best model
+best_model = grid_search.best_estimator_
+
+# Separate rows with NaN in 'Chemical_Shift' for the test set
+df_test = df[df['Chemical_Shift'].isna()].copy()
+df_test['Basis_Set_enc'] = le_basis_set.transform(df_test['Basis_Set'])
+df_test['POM_enc'] = le_pom.transform(df_test['POM'])
+
+# Define features for the test set
+X_test = df_test[['Hartree-Fock', 'Basis_Set_enc', 'POM_enc', 'Experimental']]
+
+# Predict 'Chemical_Shift' values for the test set
+y_pred = best_model.predict(X_test)
+
+# Display the predicted values
+# Create a list with the correct number of elements
+actual_values = [-18.55, -3.27, -5.07]  # Adjust the list based on the number of rows in your test set
+
+# Assign the list to the 'Chemical_Shift_Actual' column
+df_test['Chemical_Shift_Actual'] = actual_values
+
+# Assign the predicted values to the 'Chemical_Shift_Predicted' column
+df_test['Chemical_Shift_Predicted'] = y_pred
+
+print(df_test[['Basis_Set', 'POM', 'Chemical_Shift_Predicted', 'Chemical_Shift_Actual']])
