@@ -1,1 +1,1 @@
-# Machine_Learning
+Application of ML algorithms to explore properties in computational chemsitry
