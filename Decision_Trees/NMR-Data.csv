@@ -1,0 +1,13 @@
+﻿Method,Hartree-Fock,Basis_Set,Chemical_Shift,POM,Experimental
+B3LYP*,15,TZP,-10.27,Keggin,-15.41
+B3LYP,20,TZP,-11.03,Keggin,-15.41
+PBE0,25,TZP,-12.84,Keggin,-15.41
+BHAH,50,TZP,,Keggin,-15.41
+B3LYP*,15,TZP,-5.3545,Mono-Lacunary,-11.65
+B3LYP,20,TZP,-6.1597,Mono-Lacunary,-11.65
+PBE0,25,TZP,-7.271,Mono-Lacunary,-11.65
+BHAH,50,TZP,,Mono-Lacunary,-11.65
+B3LYP*,15,TZP,-2.388,A-Tri-Lacunary,-7.76
+B3LYP,20,TZP,-3.2415,A-Tri-Lacunary,-7.76
+PBE0,25,TZP,-5.0976,A-Tri-Lacunary,-7.76
+BHAH,50,TZP,,A-Tri-Lacunary,-7.76
