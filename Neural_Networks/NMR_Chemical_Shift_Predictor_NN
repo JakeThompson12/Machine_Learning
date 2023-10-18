@@ -54,7 +54,7 @@ model_pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model
 model_pipeline.fit(X_train, y_train)
 
 # Train the model
-model_pipeline.named_steps['model'].fit(X_train_preprocessed, y_train, epochs=100, batch_size=32, validation_data=(X_test_preprocessed, y_test))
+model_pipeline.named_steps['model'].fit(X_train_preprocessed, y_train, epochs=250, batch_size=32, validation_data=(X_test_preprocessed, y_test))
 
 
 loss = model_pipeline.named_steps['model'].evaluate(X_test_preprocessed, y_test)
