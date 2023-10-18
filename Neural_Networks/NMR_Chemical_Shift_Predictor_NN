@@ -10,7 +10,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 # Load data into a Pandas DataFrame
-df = pd.read_csv(r'C:\Users\2586376t\NMR-Data1.csv')
+df = pd.read_csv(r'C:\Users\2586376t\NMR-Data.csv')
 
 X = df.drop('Experimental', axis=1)
 y = df['Experimental']
