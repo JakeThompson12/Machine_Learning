@@ -1,0 +1,69 @@
+import ETL_Pipeline_Module as pipe # SEE ADF_Pipeiline script in https://github.com/JakeThompson12/ADF_Export_Pipeline 
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+from sklearn import linear_model
+
+# Retrieve files and process data
+PH3_value = 593.8517 
+compounds = ["Li3", "Na3", "Li7", "Na7", "K7", "APW9", "BPW9"]
+labels = ["Li$_{3}$", "Na$_{3}$", "Li$_{7}$", "Na$_{7}$", "K$_{7}$", "A-PW$_{9}$", "B-PW$_{9}$"]
+colors = ['steelblue', 'purple', 'darkseagreen', 'palevioletred', 'grey', 'yellow', 'red']
+
+dfs = []
+
+for compound, color in zip(compounds, colors):
+    pipe.Optimisation(compound, f"{compound}.out")
+    pipe.NMR(compound, f"{compound}.logfile", PH3_value)
+    csv_path = os.path.join(os.getcwd(), f"{compound}/{compound}_NMR_Output.csv")
+    df = pd.read_csv(csv_path)
+    dfs.append(df)
+
+# Prepare and clean data
+Shielding_Tensor_Values = [df.iloc[0, 0] for df in dfs]  # row, column
+Chemical_Shift_Values = [df.iloc[0, 3] for df in dfs]
+
+# Create a DataFrame
+new_df = pd.DataFrame({
+    'Chemical Shift': Chemical_Shift_Values,
+    'Shielding_Tensor': Shielding_Tensor_Values,
+    'Compound': compounds
+})
+
+# Save to CSV
+new_df.to_csv("Normalized_NMR_Data.csv", index=False)
+
+# Now ready for analysis
+df = pd.read_csv("Normalized_NMR_Data.csv")
+df['Exp_Chemical_Shift'] = [-15.41, -15.36, -11.65, -10.82, -11.13, -7.76, -3.76]
+
+# Scatter plot
+scatter = plt.scatter(df['Shielding_Tensor'], df['Exp_Chemical_Shift'], c=colors, edgecolor='black')
+
+# Creating a legend using handles and labels from scatter
+legend1 = plt.legend(*scatter.legend_elements(), title="Compounds", edgecolor='white')
+
+# Add the legend to the current Axes
+plt.gca().add_artist(legend1)
+
+reg = linear_model.LinearRegression()
+reg.fit(df[['Shielding_Tensor']], df['Exp_Chemical_Shift'])
+plt.plot(df['Shielding_Tensor'], reg.coef_ * df['Shielding_Tensor'] + reg.intercept_, color='Black')
+plt.ylabel("Chemical Shift / ppm")
+plt.xlabel("Shielding Tensor / a.u.")
+
+# Calculate and append corrected values
+df['Corrected_Chemical_Shifts'] = reg.predict(df[['Shielding_Tensor']])
+
+# Calculate percentage errors
+df['Percentage_Error_Computed / %'] = ((df['Chemical Shift'] - df['Exp_Chemical_Shift']) / df['Exp_Chemical_Shift']) * 100
+df['Percentage_Error_Corrected / %'] = ((df['Corrected_Chemical_Shifts'] - df['Exp_Chemical_Shift']) / df['Exp_Chemical_Shift']) * 100
+
+# Calculate difference in errors
+df['Error Difference / %'] = df['Percentage_Error_Computed / %'] - df['Percentage_Error_Corrected / %']
+
+# Save to CSV
+df.to_csv("NMR_Data_Corrected.csv", index=False)
+
+# Show the plot
+plt.show()
