@@ -8,7 +8,7 @@ data=pd.read_csv(r'C:\Users\2586376t\NN-Opt-Distance.csv')
 
 df = pd.DataFrame(data)
 
-X = df.drop(['Distance', 'Diff'], axis=1)
+X = df.drop(['Distance', 'Diff', HF-Exchange'], axis=1)
 y = df['Distance']
 
 scaler = StandardScaler()
