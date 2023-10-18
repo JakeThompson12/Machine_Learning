@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-
+# Load data into a Pandas DataFrame
 df = pd.read_csv(r'C:\Users\2586376t\NMR-Data1.csv')
 
 X = df.drop('Experimental', axis=1)
@@ -17,6 +17,7 @@ y = df['Experimental']
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
 
 numeric_features = ['Hartree-Fock']
 categorical_features = ['Method', 'Basis_Set', 'POM']
@@ -37,24 +38,25 @@ preprocessor = ColumnTransformer(
         ('cat', categorical_transformer, categorical_features)
     ])
 
-
 X_train_preprocessed = preprocessor.fit_transform(X_train)
 X_test_preprocessed = preprocessor.transform(X_test)
 
 # Build the model
 model = keras.Sequential([
-    layers.Dense(32, activation='relu', input_shape=(X_train_preprocessed.shape[1],)),
+    layers.Dense(64, activation='relu', input_shape=(X_train_preprocessed.shape[1],)),
+    layers.Dense(32, activation='relu'),
     layers.Dense(1)
 ])
 
 model.compile(optimizer='adam', loss='mse')  # Mean Squared Error for regression
+
 model_pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])
-
-
 model_pipeline.fit(X_train, y_train)
-model_pipeline.named_steps['model'].fit(X_train_preprocessed, y_train, epochs=50, batch_size=32, validation_data=(X_test_preprocessed, y_test))
 
-# Evaluate the model
+# Train the model
+model_pipeline.named_steps['model'].fit(X_train_preprocessed, y_train, epochs=100, batch_size=32, validation_data=(X_test_preprocessed, y_test))
+
+
 loss = model_pipeline.named_steps['model'].evaluate(X_test_preprocessed, y_test)
 print(f'Mean Squared Error on Test Data: {loss}')
 
@@ -64,6 +66,7 @@ missing_data = pd.DataFrame({
     'Basis_Set': ['TZP'],
     'POM': ['Keggin']
 })
+
 
 missing_data_preprocessed = model_pipeline.named_steps['preprocessor'].transform(missing_data)
 
