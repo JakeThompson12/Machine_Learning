@@ -1,0 +1,5 @@
+﻿Method,Hartree-Fock,Basis_Set,Chemical_Shift,POM,Experimental
+B3LYP*,15,TZP,-10.27,Keggin,-15.41
+B3LYP,20,TZP,-11.03,Keggin,-15.41
+PBE0,25,TZP,-12.84,Keggin,-15.41
+BHAH,50,TZP,,Keggin,-15.41
