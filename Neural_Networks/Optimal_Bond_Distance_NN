@@ -1,0 +1,93 @@
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+from tensorflow.keras import layers
+from kerastuner.tuners import RandomSearch
+
+
+data = pd.read_csv(r'C:\Users\2586376t\NN-Opt-Distance.csv')
+df = pd.DataFrame(data)
+
+
+X = df.drop(['Distance', 'Diff', 'HF-Exchange'], axis=1)
+y = df['Distance']
+
+# Standardize features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+result_df = pd.DataFrame(columns=['HF-Exchange', 'Predicted_Diff'])
+
+
+unique_hf_values = df['HF-Exchange'].unique()
+
+for hf_value in unique_hf_values:
+    print(f"\nFor HF-Exchange value {hf_value}:")
+
+
+    X_hf = X_scaled[df['HF-Exchange'] == hf_value]
+    y_hf = y[df['HF-Exchange'] == hf_value]
+
+
+    X_train, X_val, y_train, y_val = train_test_split(X_hf, y_hf, test_size=0.2, random_state=42)
+
+    # Define the model for hyperparameter tuning
+    def build_model(hp):
+        model = tf.keras.Sequential()
+        model.add(layers.InputLayer(input_shape=(X.shape[1],)))
+        for i in range(best_hps.get('num_layers', 1)):
+            model.add(layers.Dense(units=best_hps.get(f'units_{i}', 32),
+                                   activation='relu'))
+        model.add(layers.Dense(1))
+        model.compile(optimizer=tf.keras.optimizers.Adam(best_hps.get('learning_rate', 1e-3)),
+                      loss='mean_squared_error')
+        return model
+
+
+    tuner = RandomSearch(
+        build_model,
+        objective='val_loss',
+        max_trials=5,  # Adjust the number of trials as needed
+        executions_per_trial=1,
+        directory='my_dir',
+        project_name='helloworld')
+
+    tuner.search(X_train, y_train, epochs=5, validation_data=(X_val, y_val))
+
+    # Get best hyperparameters
+    best_hps = tuner.oracle.get_best_trials(num_trials=1)[0].hyperparameters.values
+
+    # Build the model with best hyperparameters
+    best_model = tuner.hypermodel.build(best_hps)
+
+    # Train the model with best hyperparameters
+    best_model.fit(X_train, y_train, epochs=50, batch_size=8, validation_data=(X_val, y_val))
+
+
+    plt.figure()
+    plt.plot(best_model.history.history['loss'], label='Training Loss')
+    plt.plot(best_model.history.history['val_loss'], label='Validation Loss')
+    plt.title(f'Loss for HF-Exchange value {hf_value}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+    # Make predictions
+    predictions = best_model.predict(X_hf)
+
+
+    min_diff_index = np.argmin(predictions)
+    min_distance = y_hf.iloc[min_diff_index]
+    min_predicted_diff = predictions[min_diff_index][0]
+
+    print(f"Distance that minimizes Diff: {min_distance}")
+    print(f"Predicted Minimized Diff: {min_predicted_diff}")
+
+    # Add the result to the summary DataFrame
+    result_df = result_df.append({'HF-Exchange': hf_value, 'Predicted_Diff': min_predicted_diff}, ignore_index=True)
+
+print("\nSummary Table:")
+print(result_df)
